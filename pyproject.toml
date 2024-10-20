@@ -1,7 +1,7 @@
 [project]
-name = "mlops-with-databricks"
+name = "reservations"
 version = "0.0.1"
-description = "Personal package for the MLOps with Databricks course."
+description = "Personal package for the MLOps with Databricks course using the hotel reservations dataset."
 readme = "README.md"
 requires-python = "==3.11.9"
 dependencies = [
