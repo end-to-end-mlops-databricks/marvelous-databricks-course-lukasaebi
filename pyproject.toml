@@ -25,6 +25,7 @@ dev = [
     "databricks-sdk>=0.32.0, <0.33",
     "ipykernel>=6.29.5, <7",
     "pip>=24.2",
+    "pre-commit>=3.0.0, <5",
 ]
 test = [
     "pytest>=8.3.3, <9",
