@@ -1,7 +1,7 @@
 [project]
 name = "mlops-with-databricks"
 version = "0.0.1"
-description = "MLOps with Databricks"
+description = "Personal package for the MLOps with Databricks course."
 readme = "README.md"
 requires-python = "==3.11.9"
 dependencies = [
@@ -20,10 +20,16 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-dev = ["databricks-connect>=15.4.1, <16",
-       "databricks-sdk>=0.32.0, <0.33",
-       "ipykernel>=6.29.5, <7",
-       "pip>=24.2"]
+dev = [
+    "databricks-connect>=15.4.1, <16",
+    "databricks-sdk>=0.32.0, <0.33",
+    "ipykernel>=6.29.5, <7",
+    "pip>=24.2",
+]
+test = [
+    "pytest>=8.3.3, <9",
+    "pytest-mock>=3.14, <4,",
+]
 
 [tool.ruff]
 line-length = 120
@@ -40,3 +46,10 @@ ignore = [
 
 [tool.ruff.format]
 indent-style = "space"
+
+[build-system]
+requires = ["setuptools >= 61.0"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+packages = ["reservations"]
