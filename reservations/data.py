@@ -25,7 +25,7 @@ class DataLoader:
     def df(self, path):
         self._df = pd.read_csv(path)
 
-    def preprocess_data(self) -> tuple[pd.DataFrame]:
+    def preprocess_data(self) -> tuple:
         X_train, X_test, y_train, y_test = self._split_data()
         self._create_preprocessor()
         y_train = self._encode_target(y_train)
@@ -34,7 +34,7 @@ class DataLoader:
         X_test = self._encode_features(X_test)
         return X_train, X_test, y_train, y_test
 
-    def _split_data(self) -> None:
+    def _split_data(self) -> list:
         return train_test_split(
             self.df.drop(self.config.target, axis=1),
             self.df[self.config.target],
@@ -42,7 +42,7 @@ class DataLoader:
             random_state=self.config.random_state,
         )
 
-    def _create_preprocessor(self) -> tuple[pd.DataFrame]:
+    def _create_preprocessor(self) -> None:
         numerical_pipeline = Pipeline(
             steps=[("imputer", SimpleImputer(strategy="median")), ("scaler", StandardScaler())]
         )
