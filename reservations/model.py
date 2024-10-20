@@ -2,12 +2,11 @@ from abc import ABC, abstractmethod
 
 import numpy as np
 import pandas as pd
-from pydantic import BaseModel
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.tree import DecisionTreeClassifier
 
 
-class Model(BaseModel, ABC):
+class Model(ABC):
     @abstractmethod
     def fit(self, X: pd.DataFrame, y: pd.DataFrame) -> None:
         pass
