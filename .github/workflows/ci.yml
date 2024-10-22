@@ -28,4 +28,5 @@ jobs:
 
       - name: Run tests
         run: |
-          python -m pytest tests/
+          uv pip install pytest
+          uv run pytest tests/
