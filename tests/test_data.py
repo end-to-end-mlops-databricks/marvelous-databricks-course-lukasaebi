@@ -1,5 +1,6 @@
 from pathlib import Path
 
+import numpy as np
 import pandas as pd
 import pytest
 
@@ -10,9 +11,9 @@ from reservations.data import DataLoader
 @pytest.fixture
 def sample_df():
     data = {
-        "age": [25, 30, 22, None, 28],
-        "income": [50000, 60000, None, 80000, 45000],
-        "city": ["New York", "Los Angeles", "New York", "Chicago", None],
+        "age": [25, 30, 22, np.nan, 28],
+        "income": [50000, 60000, np.nan, 80000, 45000],
+        "city": ["New York", "Los Angeles", "New York", "Chicago", np.nan],
         "canceled": ["Canceled", "Not_Canceled", "Not_Canceled", "Canceled", "Canceled"],
     }
     return pd.DataFrame(data)
@@ -33,12 +34,12 @@ def config():
 def data_loader(tmpdir, sample_df, config):
     csv_path = Path(tmpdir) / "sample_data.csv"
     sample_df.to_csv(csv_path, index=False)
-    return DataLoader(path=csv_path, config=config)
+    return DataLoader(df=csv_path, config=config)
 
 
 # Test initialization
 def test_data_loader_init(data_loader, config, sample_df):
-    assert data_loader.path.exists()
+    assert data_loader.df is not None and not data_loader.df.empty
     assert isinstance(data_loader.df, pd.DataFrame)
     assert data_loader.config == config
     pd.testing.assert_frame_equal(data_loader.df, sample_df)

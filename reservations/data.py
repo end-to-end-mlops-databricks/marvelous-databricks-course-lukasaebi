@@ -11,9 +11,8 @@ from reservations.config import DataConfig
 
 
 class DataLoader:
-    def __init__(self, path: str | Path, config: DataConfig):
-        self.path = path
-        self.df = path
+    def __init__(self, df: str | Path | pd.DataFrame, config: DataConfig):
+        self.df = df
         self.config = config
         self.preprocesser = None
 
@@ -22,8 +21,13 @@ class DataLoader:
         return self._df
 
     @df.setter
-    def df(self, path):
-        self._df = pd.read_csv(path)
+    def df(self, df: str | Path | pd.DataFrame):
+        if isinstance(df, (str, Path)):
+            self._df = pd.read_csv(df)
+        elif isinstance(df, pd.DataFrame):
+            self._df = df
+        else:
+            raise ValueError("Data must be a path to a csv file or a pandas DataFrame.")
 
     def preprocess_data(self) -> tuple:
         X_train, X_test, y_train, y_test = self._split_data()
