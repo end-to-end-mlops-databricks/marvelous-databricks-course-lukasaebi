@@ -24,10 +24,13 @@ mlflow.set_registry_uri("databricks-uc")
 client = mlflow.MlflowClient()
 
 # COMMAND ----------
-catalog_name = "axe_lab_playground"
-schema_name = "mlops_course"
-volume_name = "additional_data"
 config = DataConfig.from_yaml(config_path="../data/config.yaml")
+
+# Extract configuration details
+target = config.target
+catalog_name = config.catalog_name
+schema_name = config.schema_name
+volume_name = config.volume_name
 
 # COMMAND ----------
 spark = SparkSession.builder.getOrCreate()
@@ -36,7 +39,7 @@ dataloader = DataLoader(df, config)
 X_train, X_test, y_train, y_test = dataloader.preprocess_data()
 
 # COMMAND ----------
-mlflow.set_experiment("/Users/lukas.aebi@axpo.com/week2_experiment")
+mlflow.set_experiment(experiment_name="/Users/lukas.aebi@axpo.com/week2_experiment")
 with mlflow.start_run(
     run_name=now,
     tags={"branch": "week2"},
@@ -53,7 +56,7 @@ with mlflow.start_run(
         df=train,
         source=f"{catalog_name}.{schema_name}.hotel_reservations",
         name="hotel_reservations",
-        targets=config.target,
+        targets=target,
     )
     mlflow.log_input(dataset, context="training")
 

@@ -8,6 +8,9 @@ class DataConfig(BaseModel):
     categorical_variables: list[str]
     test_size: float
     random_state: int
+    catalog_name: str
+    schema_name: str
+    volume_name: str
 
     @classmethod
     def from_yaml(cls, config_path: str):
