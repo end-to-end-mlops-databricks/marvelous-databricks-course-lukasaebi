@@ -62,7 +62,8 @@ class DataLoader:
             transformers=[
                 ("numerical", numerical_pipeline, self.config.numerical_variables),
                 ("categorical", categorical_pipeline, self.config.categorical_variables),
-            ]
+            ],
+            remainder="passthrough",
         )
 
     def _encode_target(self, y: pd.Series) -> pd.Series:
