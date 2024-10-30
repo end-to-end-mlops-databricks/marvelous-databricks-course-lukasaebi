@@ -1,5 +1,6 @@
 from pathlib import Path
 
+import numpy as np
 import pandas as pd
 from sklearn.compose import ColumnTransformer
 from sklearn.impute import SimpleImputer
@@ -62,14 +63,14 @@ class DataLoader:
             transformers=[
                 ("numerical", numerical_pipeline, self.config.numerical_variables),
                 ("categorical", categorical_pipeline, self.config.categorical_variables),
-            ],
-            remainder="passthrough",
+            ]
         )
 
     def _encode_target(self, y: pd.Series) -> pd.Series:
         return y.map({"Canceled": 1, "Not_Canceled": 0})
 
     def _encode_features(self, X: pd.DataFrame) -> pd.DataFrame:
+        id_column = np.array(X["Booking_ID"].str[3:].astype(int).tolist())
         X_encoded = self.preprocessor.fit_transform(X)
-        feature_names = [name.split("__")[-1] for name in self.preprocessor.get_feature_names_out()]
-        return pd.DataFrame(X_encoded, columns=feature_names)
+        feature_names = ["Booking_ID"] + [name.split("__")[-1] for name in self.preprocessor.get_feature_names_out()]
+        return pd.DataFrame(np.c_[id_column, X_encoded], columns=feature_names)
