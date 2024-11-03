@@ -11,7 +11,7 @@ from mlflow.models import infer_signature
 from pyspark.sql import SparkSession
 
 from reservations.config import DataConfig
-from reservations.data import DataLoader
+from reservations.data import DataLoader, DataPreprocessor
 from reservations.evaluate import Accuracy
 from reservations.model import RandomForestModel
 
@@ -24,7 +24,7 @@ mlflow.set_registry_uri("databricks-uc")
 client = mlflow.MlflowClient()
 
 # COMMAND ----------
-config = DataConfig.from_yaml(config_path="../data/config.yaml")
+config = DataConfig.from_yaml(config_path="../../data/config.yaml")
 
 # Extract configuration details
 target = config.target
@@ -35,8 +35,11 @@ volume_name = config.volume_name
 # COMMAND ----------
 spark = SparkSession.builder.getOrCreate()
 df = spark.table(f"{catalog_name}.{schema_name}.hotel_reservations").toPandas()
-dataloader = DataLoader(df, config)
-X_train, X_test, y_train, y_test = dataloader.preprocess_data()
+dataloader = DataLoader(config)
+train, test = dataloader.split_data(df)
+preprocessor = DataPreprocessor(config)
+X_train, y_train = preprocessor.preprocess_data(train, target)
+X_test, y_test = preprocessor.preprocess_data(test, target)
 
 # COMMAND ----------
 mlflow.set_experiment(experiment_name="/Users/lukas.aebi@axpo.com/week2_experiment")
