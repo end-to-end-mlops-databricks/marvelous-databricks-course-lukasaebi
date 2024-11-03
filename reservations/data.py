@@ -1,4 +1,4 @@
-from pathlib import Path
+from typing import Optional
 
 import numpy as np
 import pandas as pd
@@ -12,40 +12,19 @@ from reservations.config import DataConfig
 
 
 class DataLoader:
-    def __init__(self, df: str | Path | pd.DataFrame, config: DataConfig):
-        self.df = df
+    def __init__(self, config: DataConfig):
         self.config = config
-        self.preprocesser = None
 
-    @property
-    def df(self):
-        return self._df
+    def split_data(self, X: pd.DataFrame, y: Optional[pd.Series] = None) -> tuple:
+        if y is None:
+            return train_test_split(X, test_size=self.config.test_size, random_state=self.config.random_state)
+        return train_test_split(X, y, test_size=self.config.test_size, random_state=self.config.random_state)
 
-    @df.setter
-    def df(self, df: str | Path | pd.DataFrame):
-        if isinstance(df, (str, Path)):
-            self._df = pd.read_csv(df)
-        elif isinstance(df, pd.DataFrame):
-            self._df = df
-        else:
-            raise ValueError("Data must be a path to a csv file or a pandas DataFrame.")
 
-    def preprocess_data(self) -> tuple:
-        X_train, X_test, y_train, y_test = self._split_data()
+class DataPreprocessor:
+    def __init__(self, config: DataConfig):
+        self.config = config
         self._create_preprocessor()
-        y_train = self._encode_target(y_train)
-        y_test = self._encode_target(y_test)
-        X_train = self._encode_features(X_train)
-        X_test = self._encode_features(X_test)
-        return X_train, X_test, y_train, y_test
-
-    def _split_data(self) -> list:
-        return train_test_split(
-            self.df.drop(self.config.target, axis=1),
-            self.df[self.config.target],
-            test_size=self.config.test_size,
-            random_state=self.config.random_state,
-        )
 
     def _create_preprocessor(self) -> None:
         numerical_pipeline = Pipeline(
@@ -66,11 +45,16 @@ class DataLoader:
             ]
         )
 
+    def preprocess_data(self, X: pd.DataFrame, target: str) -> tuple[pd.DataFrame, pd.Series]:
+        X_encoded = self._encode_features(X.drop(target, axis=1))
+        y_encoded = self._encode_target(X[target])
+        return X_encoded, y_encoded
+
     def _encode_target(self, y: pd.Series) -> pd.Series:
         return y.map({"Canceled": 1, "Not_Canceled": 0})
 
     def _encode_features(self, X: pd.DataFrame) -> pd.DataFrame:
-        id_column = np.array(X["Booking_ID"].str[3:].astype(int).tolist())
         X_encoded = self.preprocessor.fit_transform(X)
-        feature_names = ["Booking_ID"] + [name.split("__")[-1] for name in self.preprocessor.get_feature_names_out()]
-        return pd.DataFrame(np.c_[id_column, X_encoded], columns=feature_names)
+        feature_names = [name.split("__")[-1] for name in self.preprocessor.get_feature_names_out()]
+        id = feature_names.pop()
+        return pd.DataFrame(np.c_[X_encoded[:, -1], X_encoded[:, :-1]], columns=[id, *feature_names])
