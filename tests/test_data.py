@@ -1,11 +1,9 @@
-from pathlib import Path
-
 import numpy as np
 import pandas as pd
 import pytest
 
 from reservations.config import DataConfig
-from reservations.data import DataLoader
+from reservations.data import DataLoader, DataPreprocessor
 
 
 @pytest.fixture
@@ -27,56 +25,56 @@ def config():
         categorical_variables=["city"],
         test_size=0.2,
         random_state=42,
+        catalog_name="catalog",
+        schema_name="schema",
+        volume_name="volume",
     )
 
 
-@pytest.fixture
-def data_loader(tmpdir, sample_df, config):
-    csv_path = Path(tmpdir) / "sample_data.csv"
-    sample_df.to_csv(csv_path, index=False)
-    return DataLoader(df=csv_path, config=config)
+# Tests for DataLoader
+def test_data_loader_split_data_without_target(sample_df, config):
+    data_loader = DataLoader(config=config)
+    X_train, X_test = data_loader.split_data(sample_df.drop(columns=config.target))
+
+    # Test the length of train and test sets
+    assert len(X_train) == 4  # 80% of 5 samples
+    assert len(X_test) == 1  # 20% of 5 samples
 
 
-# Test initialization
-def test_data_loader_init(data_loader, config, sample_df):
-    assert data_loader.df is not None and not data_loader.df.empty
-    assert isinstance(data_loader.df, pd.DataFrame)
-    assert data_loader.config == config
-    pd.testing.assert_frame_equal(data_loader.df, sample_df)
+def test_data_loader_split_data_with_target(sample_df, config):
+    data_loader = DataLoader(config=config)
+    X_train, X_test, y_train, y_test = data_loader.split_data(
+        sample_df.drop(columns=config.target), sample_df[config.target]
+    )
+
+    # Test the length of train and test sets
+    assert len(X_train) == 4
+    assert len(X_test) == 1
+    assert len(y_train) == 4
+    assert len(y_test) == 1
 
 
-# Test data splitting
-def test_split_data(data_loader):
-    X_train, X_test, y_train, y_test = data_loader._split_data()
-    assert X_train.shape[0] == 4
-    assert X_test.shape[0] == 1
-    assert y_train.shape[0] == 4
-    assert y_test.shape[0] == 1
+# Tests for DataPreprocessor
+def test_data_preprocessor_encode_target(sample_df, config):
+    preprocessor = DataPreprocessor(config=config)
+    y_encoded = preprocessor._encode_target(sample_df[config.target])
+
+    # Check if the target is correctly encoded
+    expected_encoded = pd.Series([1, 0, 0, 1, 1], name="canceled")
+    pd.testing.assert_series_equal(y_encoded, expected_encoded)
 
 
-# Test preprocessor creation
-def test_create_preprocessor(data_loader):
-    data_loader._create_preprocessor()
-    assert "numerical" in data_loader.preprocessor.transformers[0][0]
-    assert "categorical" in data_loader.preprocessor.transformers[1][0]
+def test_data_preprocessor_preprocess_data(sample_df, config):
+    preprocessor = DataPreprocessor(config=config)
+    X_encoded, y_encoded = preprocessor.preprocess_data(sample_df, target=config.target)
 
+    # Check if y_encoded is as expected
+    expected_y = pd.Series([1, 0, 0, 1, 1], name="canceled")
+    pd.testing.assert_series_equal(y_encoded, expected_y)
 
-# Test target encoding
-def test_encode_target(data_loader, sample_df):
-    y_encoded = data_loader._encode_target(sample_df["canceled"])
-    expected = pd.Series([1, 0, 0, 1, 1], name="canceled")
-    pd.testing.assert_series_equal(y_encoded, expected)
+    # Check the shape of X_encoded (should have two numerical and three one-hot encoded columns)
+    assert X_encoded.shape == (5, 5)
 
-
-# Test feature encoding
-def test_encode_features(data_loader, sample_df):
-    data_loader._create_preprocessor()
-    X_train, _, _, _ = data_loader._split_data()
-    X_encoded = data_loader._encode_features(X_train)
-
-    # Verify feature transformation results
-    assert isinstance(X_encoded, pd.DataFrame)
-    assert X_encoded.shape[1] == 4
-    assert "age" in X_encoded.columns
-    assert "income" in X_encoded.columns
-    assert any("city" in col for col in X_encoded.columns)
+    # Check if the column names are correct
+    expected_columns = ["age", "income", "city_Chicago", "city_Los Angeles", "city_New York"]
+    assert all(col in X_encoded.columns for col in expected_columns)
