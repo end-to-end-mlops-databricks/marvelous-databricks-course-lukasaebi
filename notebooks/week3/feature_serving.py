@@ -4,6 +4,7 @@
 # COMMAND ----------
 
 import mlflow
+import requests
 from databricks import feature_engineering
 from databricks.feature_engineering import FeatureLookup
 from databricks.sdk import WorkspaceClient
@@ -72,7 +73,7 @@ spark.sql(f"""
 """)
 
 # COMMAND ----------
-# 2. Create the online table using feature table
+# 2. Create the online table using the feature table
 
 spec = OnlineTableSpec(
     primary_key_columns=["Booking_ID"],
@@ -85,7 +86,7 @@ spec = OnlineTableSpec(
 online_table_pipeline = workspace.online_tables.create(name=online_table_name, spec=spec)
 
 # COMMAND ----------
-# 3. Create feture look up and feature spec
+# 3. Create feature spec containing feature lookup
 
 # Define features to look up from the feature table
 features = [
@@ -104,9 +105,11 @@ fe.create_feature_spec(name=feature_spec_name, features=features, exclude_column
 # COMMAND ----------
 # 4. Create endpoing using feature spec
 
+serving_endpoint_name = "hotel-reservations-feature-serving"
+
 # Create a feature serving endpoint
 workspace.serving_endpoints.create(
-    name="hotel-reservations-feature-serving",
+    name=serving_endpoint_name,
     config=EndpointCoreConfigInput(
         served_entities=[
             ServedEntityInput(
@@ -116,4 +119,16 @@ workspace.serving_endpoints.create(
             )
         ]
     ),
+)
+
+# COMMAND ----------
+token = dbutils.notebook.entry_point.getDbutils().notebook().getContext().apiToken().get()  # type: ignore  # noqa: F821
+host = spark.conf.get("spark.databricks.workspaceUrl")
+
+serving_endpoint_url = f"https://{host}/serving-endpoints/{serving_endpoint_name}/invocations"
+
+response = requests.post(
+    serving_endpoint_url,
+    headers={"Authorization": f"Bearer {token}"},
+    json={"dataframe_records": [{"Id": "1"}]},
 )
