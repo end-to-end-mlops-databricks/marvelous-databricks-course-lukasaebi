@@ -1,12 +1,13 @@
 from abc import ABC, abstractmethod
 
+import mlflow
 import numpy as np
 import pandas as pd
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.tree import DecisionTreeClassifier
 
 
-class Model(ABC):
+class Model(ABC, mlflow.pyfunc.PythonModel):
     @abstractmethod
     def fit(self, X: pd.DataFrame, y: pd.DataFrame) -> None:
         pass

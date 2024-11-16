@@ -3,3 +3,6 @@ numerical_variables: ["no_of_adults", "no_of_children", "no_of_weekend_nights", 
 categorical_variables: ["type_of_meal_plan", "room_type_reserved", "market_segment_type"]
 test_size: 0.2
 random_state: 42
+catalog_name: "axe_lab_playground"
+schema_name: "mlops_course"
+volume_name: "additional_data"
